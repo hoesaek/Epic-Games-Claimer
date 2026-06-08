@@ -1,0 +1,12 @@
+{
+  "name": "epic-service1-login",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "playwright-core": "^1.44.1"
+  }
+}
