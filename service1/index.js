@@ -1,7 +1,6 @@
 import { chromium } from 'playwright-core';
 import fs from 'fs/promises';
 import crypto from 'crypto';
-import path from 'path';
 
 // ==============================================================================
 // SERVICE 1 : AUTHENTIFICATION & CHIFFREMENT

@@ -9,8 +9,7 @@ RUN apk add --no-cache \
       freetype \
       harfbuzz \
       ca-certificates \
-      ttf-freefont \
-      xvfb
+      ttf-freefont
 
 WORKDIR /app
 
