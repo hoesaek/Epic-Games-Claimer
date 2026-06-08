@@ -1,31 +1,23 @@
 services:
-  # ==============================================================================
+  # ==========================================================
   # SERVICE 1 : MODULE DE CONNEXION (LANCEMENT MANUEL)
-  # Commande : docker compose run --rm service1-login
-  # ==============================================================================
+  # docker compose run --rm -p 9222:9222 service1-login
+  # ==========================================================
   service1-login:
-    build:
-      context: ./service1
-      dockerfile: Dockerfile
+    image: ghcr.io/hoesaek/epic-games-claimer-service1:latest
     container_name: epic-login
-    profiles: ["manual"] # Empêche le démarrage auto avec `docker compose up`
+    profiles: ["manual"]
     env_file: .env
     volumes:
       - session_data:/app/shared
-    # On map un port si on veut utiliser une interface debug/VNC
     ports:
       - "9222:9222"
-    environment:
-      - DISPLAY=:99
 
-  # ==============================================================================
+  # ==========================================================
   # SERVICE 2 : DÉMON DE RÉCUPÉRATION (BACKGROUND SERVER)
-  # Commande : docker compose up -d service2-daemon
-  # ==============================================================================
+  # ==========================================================
   service2-daemon:
-    build:
-      context: ./service2
-      dockerfile: Dockerfile
+    image: ghcr.io/hoesaek/epic-games-claimer-service2:latest
     container_name: epic-daemon
     restart: unless-stopped
     env_file: .env
@@ -33,5 +25,4 @@ services:
       - session_data:/app/shared
 
 volumes:
-  # Volume Docker Géré (plus sécurisé qu'un bind mount ./data)
   session_data:
