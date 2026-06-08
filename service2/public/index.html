@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epic Games Claimer - Bibliothèque</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --primary: #3b82f6;
+            --accent: #8b5cf6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        header {
+            text-align: center;
+            padding: 4rem 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto;
+            animation: fadeIn 1s ease-out 0.3s both;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+            animation: slideUp 0.8s ease-out 0.5s both;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 0.5rem;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .game-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: fadeIn 0.5s ease-out both;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: rgba(255,255,255,0.2);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 20px rgba(59, 130, 246, 0.2);
+        }
+
+        .game-cover {
+            width: 100%;
+            height: 380px;
+            object-fit: cover;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            background: #1e293b; /* Placeholder if image fails */
+        }
+
+        .game-info {
+            padding: 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #fff;
+        }
+
+        .game-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .game-date {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge.nouveau {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .badge.existant {
+            background: rgba(148, 163, 184, 0.1);
+            color: #94a3b8;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem;
+            grid-column: 1 / -1;
+            background: var(--card-bg);
+            border-radius: 20px;
+            border: 1px dashed rgba(255,255,255,0.1);
+        }
+
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(59, 130, 246, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto 2rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Ma Bibliothèque Epic</h1>
+        <p class="subtitle">Tableau de bord de récupération automatisée des jeux gratuits. Laissez le démon travailler pour vous.</p>
+    </header>
+
+    <div class="container">
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value" id="stat-total">0</div>
+                <div class="stat-label">Jeux Traités</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-claimed" style="color: #a78bfa; text-shadow: 0 0 20px rgba(139, 92, 246, 0.4);">0</div>
+                <div class="stat-label">Récupérés par le Bot</div>
+            </div>
+        </div>
+
+        <div id="loading" class="empty-state">
+            <div class="loader"></div>
+            <p>Chargement de l'historique depuis la base de données...</p>
+        </div>
+
+        <div class="games-grid" id="games-grid">
+            <!-- Games will be injected here via JS -->
+        </div>
+    </div>
+
+    <script>
+        async function fetchHistory() {
+            try {
+                const response = await fetch('/api/history');
+                const games = await response.json();
+                
+                document.getElementById('loading').style.display = 'none';
+                
+                const grid = document.getElementById('games-grid');
+                
+                if (games.length === 0) {
+                    grid.innerHTML = `
+                        <div class="empty-state">
+                            <h2 style="margin-bottom: 1rem; color: #fff;">Aucun jeu dans l'historique</h2>
+                            <p style="color: #94a3b8;">Le bot n'a pas encore récupéré de jeu. Attendez jeudi 20h00 !</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Update Stats
+                document.getElementById('stat-total').textContent = games.length;
+                document.getElementById('stat-claimed').textContent = games.filter(g => g.status === 'Nouveau').length;
+
+                // Render Cards
+                games.forEach((game, index) => {
+                    const card = document.createElement('a');
+                    card.href = game.url;
+                    card.target = "_blank";
+                    card.className = 'game-card';
+                    card.style.animationDelay = `${(index % 10) * 0.1}s`;
+
+                    const date = new Date(game.date).toLocaleDateString('fr-FR', {
+                        day: 'numeric', month: 'short', year: 'numeric'
+                    });
+
+                    const badgeClass = game.status === 'Nouveau' ? 'nouveau' : 'existant';
+
+                    card.innerHTML = `
+                        <img class="game-cover" src="${game.coverUrl || 'https://via.placeholder.com/400x500/1e293b/94a3b8?text=Epic+Games'}" alt="${game.title}" loading="lazy" onerror="this.src='https://via.placeholder.com/400x500/1e293b/94a3b8?text=Image+Indisponible'">
+                        <div class="game-info">
+                            <h3 class="game-title">${game.title}</h3>
+                            <div class="game-meta">
+                                <span class="game-date">${date}</span>
+                                <span class="badge ${badgeClass}">${game.status}</span>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error('Error fetching history:', error);
+                document.getElementById('loading').innerHTML = `
+                    <h2 style="color: #ef4444; margin-bottom: 1rem;">Erreur de connexion</h2>
+                    <p style="color: #94a3b8;">Impossible de joindre le serveur. Le démon est-il en ligne ?</p>
+                `;
+            }
+        }
+
+        // Initialize
+        fetchHistory();
+    </script>
+</body>
+</html>
