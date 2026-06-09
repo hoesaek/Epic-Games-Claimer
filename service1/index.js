@@ -24,23 +24,18 @@ function encryptData(text) {
 }
 
 async function login() {
-    console.log("🚀 [SERVICE 1] Démarrage du navigateur (Port de debug 9222)...");
-
-    // Lancement de Chromium. Dans Docker, afficher une fenêtre native est complexe.
-    // L'astuce "DevOps" : on lance en Headless mais avec un port de debug distant !
+    console.log("🚀 [SERVICE 1] Démarrage du navigateur Chrome dans la session VNC...");
     const browser = await chromium.launch({
         executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
-        headless: true, // Doit être true dans Docker sans X11
+        headless: false, // Affiché dans l'interface VNC
         args: [
             '--no-sandbox', 
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
             '--disable-blink-features=AutomationControlled',
-            '--remote-debugging-address=0.0.0.0', // Permet la connexion distante
-            '--remote-debugging-port=9222',
-            '--remote-allow-origins=*',
             '--proxy-server=direct://',
-            '--proxy-bypass-list=*'
+            '--proxy-bypass-list=*',
+            '--start-maximized'
         ]
     });
 
@@ -54,11 +49,10 @@ async function login() {
         await page.goto('https://www.epicgames.com/id/login?redirectUrl=https%3A%2F%2Fstore.epicgames.com%2Ffr%2F', { waitUntil: 'domcontentloaded', timeout: 60000 });
         
         console.log("\n=======================================================");
-        console.log("🌐 URL Epic Games ouverte !");
+        console.log("🌐 Page de connexion Epic Games ouverte !");
         console.log("👉 ACTION REQUISE : Le conteneur Docker tourne.");
-        console.log("👉 Si vous n'avez pas de redirection d'affichage X11 :");
-        console.log("   Ouvrez votre navigateur local et allez sur : http://[IP_DE_VOTRE_SERVEUR]:9222");
-        console.log("   Vous pourrez interagir avec la page Epic Games depuis là !");
+        console.log("👉 Allez sur l'interface VNC : http://[IP_DE_VOTRE_SERVEUR]:6080/vnc.html");
+        console.log("   Connectez-vous manuellement dans le navigateur affiché.");
         console.log("=======================================================\n");
 
         // On attend la réussite de la connexion (changement d'URL)
