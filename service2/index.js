@@ -198,7 +198,7 @@ async function claimFreeGames(claimAll = false) {
             await page.goto('https://store.epicgames.com/fr/free-games');
             await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
 
-            const game_loc = page.locator('a[role="link"]:has(span:text-matches("(?i)gratuit|free|100", "i"))');
+            const game_loc = page.locator('a[role="link"]:has(span:text-matches("gratuit|free|100", "i"))');
             await game_loc.last().waitFor({ timeout: 10000 }).catch(() => logSSE('⚠ Aucun jeu gratuit trouvé sur la page via le texte.'));
             
             const count = await game_loc.count();
@@ -289,7 +289,7 @@ async function claimFreeGames(claimAll = false) {
         } else if (error.message === "SESSION_EXPIRED") {
             logSSE("❌ ERREUR : Session Epic Games expirée !");
         } else {
-            logSSE("❌ Erreur d'exécution :", error.message);
+            logSSE("❌ Erreur d'exécution : " + error.message);
         }
     } finally {
         if (browser) await browser.close();
