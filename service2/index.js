@@ -36,8 +36,23 @@ app.get('/api/history', async (req, res) => {
 app.post('/api/claim', async (req, res) => {
     console.log("⚡ Déclenchement manuel de la vérification demandé via l'API.");
     // Run in background so request doesn't timeout
-    claimFreeGames().catch(e => console.error(e));
+    claimFreeGames(false).catch(e => console.error(e));
     res.json({ success: true, message: "Vérification lancée en arrière-plan !" });
+});
+
+app.post('/api/claim-all', async (req, res) => {
+    console.log("⚡ Déclenchement manuel (TOUT GRATUIT) demandé via l'API.");
+    claimFreeGames(true).catch(e => console.error(e));
+    res.json({ success: true, message: "Vérification massive lancée en arrière-plan !" });
+});
+
+app.get('/api/user', async (req, res) => {
+    try {
+        const data = await fs.readFile('/app/shared/user.json', 'utf-8');
+        res.json(JSON.parse(data));
+    } catch (e) {
+        res.json({ username: "En attente de connexion..." });
+    }
 });
 
 app.listen(8080, () => {
@@ -67,7 +82,7 @@ async function saveToHistory(game) {
 }
 
 // --- Routine Principale ---
-async function claimFreeGames() {
+async function claimFreeGames(claimAll = false) {
     console.log(`\n[${new Date().toLocaleString()}] 🎮 Démarrage de la routine...`);
     let browser = null;
 
@@ -101,23 +116,57 @@ async function claimFreeGames() {
             for (const [k, v] of Object.entries(ls)) window.localStorage.setItem(k, v);
         }, sessionData.localStorage || {});
 
-        console.log("🌐 Navigation silencieuse vers Epic Games...");
+        // Vérifier si la session est valide
         await page.goto('https://store.epicgames.com/fr/free-games');
         await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
-
         const isLoggedIn = await page.locator('egs-navigation').getAttribute('isloggedin').catch(() => 'false');
         if (isLoggedIn !== 'true') throw new Error("SESSION_EXPIRED");
-        
-        console.log("✅ Session valide. Lancement de l'algorithme de récupération...");
 
-        const game_loc = page.locator('a:has(span:text-is("Free Now")), a:has(span:text-is("Gratuit maintenant"))');
-        await game_loc.last().waitFor({ timeout: 10000 }).catch(() => console.log('⚠ Aucun jeu gratuit trouvé sur la page.'));
+        // Extraction du nom d'utilisateur
+        const username = await page.evaluate(() => {
+            try {
+                const profile = localStorage.getItem('mfe-profile-cache');
+                if (profile) return JSON.parse(profile).displayName;
+            } catch(e) {}
+            return 'Connecté';
+        }).catch(() => 'Connecté');
         
-        const count = await game_loc.count();
+        await fs.writeFile('/app/shared/user.json', JSON.stringify({ username }));
+        console.log(`✅ Session valide (Utilisateur: ${username}). Lancement de la récupération...`);
+
         const urls = [];
-        for (let i = 0; i < count; i++) {
-            const href = await game_loc.nth(i).getAttribute('href');
-            if (href) urls.push(`https://store.epicgames.com${href}`);
+
+        if (claimAll) {
+            console.log("🌐 Navigation silencieuse vers la collection Free-To-Play...");
+            await page.goto('https://store.epicgames.com/fr/collection/free-to-play');
+            await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
+            
+            console.log("Scroll pour charger plus de jeux...");
+            for(let i=0; i<15; i++) {
+                await page.mouse.wheel(0, 2000);
+                await page.waitForTimeout(500);
+            }
+            
+            const game_loc = page.locator('a[role="link"]:has(span:text-is("Gratuit")), a[role="link"]:has(span:text-is("Free"))');
+            const count = await game_loc.count();
+            for (let i = 0; i < count; i++) {
+                const href = await game_loc.nth(i).getAttribute('href');
+                if (href) urls.push(`https://store.epicgames.com${href}`);
+            }
+            console.log(`🔍 ${urls.length} jeux/extensions trouvés dans la section Free-To-Play.`);
+        } else {
+            console.log("🌐 Navigation silencieuse vers Epic Games (Jeux de la semaine)...");
+            await page.goto('https://store.epicgames.com/fr/free-games');
+            await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
+
+            const game_loc = page.locator('a:has(span:text-is("Free Now")), a:has(span:text-is("Gratuit maintenant"))');
+            await game_loc.last().waitFor({ timeout: 10000 }).catch(() => console.log('⚠ Aucun jeu gratuit trouvé sur la page.'));
+            
+            const count = await game_loc.count();
+            for (let i = 0; i < count; i++) {
+                const href = await game_loc.nth(i).getAttribute('href');
+                if (href) urls.push(`https://store.epicgames.com${href}`);
+            }
         }
 
         for (const url of urls) {

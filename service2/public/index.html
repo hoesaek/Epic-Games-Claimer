@@ -279,11 +279,17 @@
 
     <header>
         <h1>Ma Bibliothèque Epic</h1>
-        <p class="subtitle">Tableau de bord de récupération automatisée des jeux gratuits. Laissez le démon travailler pour vous.</p>
-        <button class="btn-manual" onclick="triggerManualClaim()" id="btn-trigger">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-            Forcer la vérification maintenant
-        </button>
+        <p class="subtitle" id="user-display">Chargement de l'utilisateur...</p>
+        <div style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center;">
+            <button class="btn-manual" onclick="triggerManualClaim(false)" id="btn-trigger">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                Jeux de la semaine
+            </button>
+            <button class="btn-manual" onclick="triggerManualClaim(true)" id="btn-trigger-all" style="background: linear-gradient(135deg, #f59e0b, #ef4444);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                TOUT Gratuit (Massif)
+            </button>
+        </div>
     </header>
 
     <div id="notification" class="notification"></div>
@@ -311,6 +317,16 @@
     </div>
 
     <script>
+        async function fetchUser() {
+            try {
+                const response = await fetch('/api/user');
+                const data = await response.json();
+                document.getElementById('user-display').innerHTML = `Connecté en tant que : <strong style="color: #60a5fa;">${data.username}</strong>`;
+            } catch (e) {
+                document.getElementById('user-display').innerText = "Erreur de chargement de l'utilisateur.";
+            }
+        }
+
         async function fetchHistory() {
             try {
                 const response = await fetch('/api/history');
@@ -371,22 +387,24 @@
         }
 
         // Initialize
+        fetchUser();
         fetchHistory();
 
-        async function triggerManualClaim() {
-            const btn = document.getElementById('btn-trigger');
-            const notif = document.getElementById('notification');
+        async function triggerManualClaim(claimAll) {
+            const btn = claimAll ? document.getElementById('btn-trigger-all') : document.getElementById('btn-trigger');
+            const originalContent = btn.innerHTML;
             
             try {
                 btn.disabled = true;
                 btn.style.opacity = '0.7';
                 btn.innerHTML = '<div class="loader" style="width: 20px; height: 20px; margin: 0; border-width: 2px;"></div> Lancement...';
 
-                const response = await fetch('/api/claim', { method: 'POST' });
+                const endpoint = claimAll ? '/api/claim-all' : '/api/claim';
+                const response = await fetch(endpoint, { method: 'POST' });
                 const result = await response.json();
 
                 if (result.success) {
-                    showNotification('Vérification lancée ! Regardez les logs Docker.', 'success');
+                    showNotification(claimAll ? 'Vérification massive lancée !' : 'Vérification lancée ! Regardez les logs Docker.', 'success');
                 } else {
                     showNotification('Erreur lors du lancement.', 'error');
                 }
@@ -397,7 +415,7 @@
                 setTimeout(() => {
                     btn.disabled = false;
                     btn.style.opacity = '1';
-                    btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Forcer la vérification maintenant';
+                    btn.innerHTML = originalContent;
                 }, 3000);
             }
         }
