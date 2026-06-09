@@ -30,7 +30,7 @@ async function login() {
     // L'astuce "DevOps" : on lance en Headless mais avec un port de debug distant !
     const browser = await chromium.launch({
         executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
-        headless: false, // Force false, mais on compense avec l'args si pas d'écran
+        headless: true, // Doit être true dans Docker sans X11
         args: [
             '--no-sandbox', 
             '--disable-setuid-sandbox',
