@@ -219,6 +219,60 @@
             text-decoration: none;
             color: inherit;
         }
+
+        .btn-manual {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1.5rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-manual:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.6);
+        }
+
+        .btn-manual:active {
+            transform: translateY(0);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            transform: translateX(150%);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: rgba(16, 185, 129, 0.9);
+            border: 1px solid #10b981;
+        }
+
+        .notification.error {
+            background: rgba(239, 68, 68, 0.9);
+            border: 1px solid #ef4444;
+        }
     </style>
 </head>
 <body>
@@ -226,7 +280,13 @@
     <header>
         <h1>Ma Bibliothèque Epic</h1>
         <p class="subtitle">Tableau de bord de récupération automatisée des jeux gratuits. Laissez le démon travailler pour vous.</p>
+        <button class="btn-manual" onclick="triggerManualClaim()" id="btn-trigger">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            Forcer la vérification maintenant
+        </button>
     </header>
+
+    <div id="notification" class="notification"></div>
 
     <div class="container">
         <div class="stats-bar">
@@ -312,6 +372,45 @@
 
         // Initialize
         fetchHistory();
+
+        async function triggerManualClaim() {
+            const btn = document.getElementById('btn-trigger');
+            const notif = document.getElementById('notification');
+            
+            try {
+                btn.disabled = true;
+                btn.style.opacity = '0.7';
+                btn.innerHTML = '<div class="loader" style="width: 20px; height: 20px; margin: 0; border-width: 2px;"></div> Lancement...';
+
+                const response = await fetch('/api/claim', { method: 'POST' });
+                const result = await response.json();
+
+                if (result.success) {
+                    showNotification('Vérification lancée ! Regardez les logs Docker.', 'success');
+                } else {
+                    showNotification('Erreur lors du lancement.', 'error');
+                }
+            } catch (error) {
+                console.error('Error triggering claim:', error);
+                showNotification('Erreur de connexion au serveur.', 'error');
+            } finally {
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Forcer la vérification maintenant';
+                }, 3000);
+            }
+        }
+
+        function showNotification(message, type) {
+            const notif = document.getElementById('notification');
+            notif.textContent = message;
+            notif.className = `notification show ${type}`;
+            
+            setTimeout(() => {
+                notif.className = 'notification';
+            }, 4000);
+        }
     </script>
 </body>
 </html>

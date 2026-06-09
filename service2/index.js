@@ -33,6 +33,13 @@ app.get('/api/history', async (req, res) => {
     }
 });
 
+app.post('/api/claim', async (req, res) => {
+    console.log("⚡ Déclenchement manuel de la vérification demandé via l'API.");
+    // Run in background so request doesn't timeout
+    claimFreeGames().catch(e => console.error(e));
+    res.json({ success: true, message: "Vérification lancée en arrière-plan !" });
+});
+
 app.listen(8080, () => {
     console.log("🌐 Dashboard Web accessible sur le port 8080");
 });
