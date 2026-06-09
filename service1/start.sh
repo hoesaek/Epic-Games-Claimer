@@ -1,6 +1,14 @@
 #!/bin/bash
 
 # Configuration
+echo "🛠️ Vérification de la session..."
+if [ -f "/app/shared/session.enc" ]; then
+    echo "✅ Le fichier session.enc existe déjà !"
+    echo "🛑 Le Service 1 (Login manuel) n'a pas besoin d'être lancé."
+    echo "👉 Si vous voulez vous reconnecter, supprimez le fichier session.enc dans le dossier partagé."
+    exit 0
+fi
+
 export DISPLAY=:99
 export RESOLUTION=1280x800x24
 

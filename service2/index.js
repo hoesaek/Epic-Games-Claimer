@@ -55,6 +55,23 @@ app.get('/api/user', async (req, res) => {
     }
 });
 
+let logClients = [];
+function logSSE(msg) {
+    const time = new Date().toLocaleTimeString('fr-FR');
+    const formatted = `[${time}] ${msg}`;
+    console.log(msg); // Affichage console standard
+    logClients.forEach(c => c.write(`data: ${JSON.stringify({ msg: formatted })}\n\n`));
+}
+
+app.get('/api/logs/stream', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+    logClients.push(res);
+    req.on('close', () => { logClients = logClients.filter(c => c !== res); });
+});
+
 app.listen(8080, () => {
     console.log("🌐 Dashboard Web accessible sur le port 8080");
 });
@@ -83,13 +100,13 @@ async function saveToHistory(game) {
 
 // --- Routine Principale ---
 async function claimFreeGames(claimAll = false) {
-    console.log(`\n[${new Date().toLocaleString()}] 🎮 Démarrage de la routine...`);
+    logSSE(`\n[${new Date().toLocaleString()}] 🎮 Démarrage de la routine...`);
     let browser = null;
 
     try {
         const rawFile = await fs.readFile(SESSION_FILE, 'utf-8');
         const sessionData = decryptData(JSON.parse(rawFile));
-        console.log("🔓 Session déchiffrée avec succès.");
+        logSSE("🔓 Session déchiffrée avec succès.");
 
         browser = await chromium.launch({
             executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
@@ -132,16 +149,16 @@ async function claimFreeGames(claimAll = false) {
         }).catch(() => 'Connecté');
         
         await fs.writeFile('/app/shared/user.json', JSON.stringify({ username }));
-        console.log(`✅ Session valide (Utilisateur: ${username}). Lancement de la récupération...`);
+        logSSE(`✅ Session valide (Utilisateur: ${username}). Lancement de la récupération...`);
 
         const urls = [];
 
         if (claimAll) {
-            console.log("🌐 Navigation silencieuse vers la collection Free-To-Play...");
+            logSSE("🌐 Navigation silencieuse vers la collection Free-To-Play...");
             await page.goto('https://store.epicgames.com/fr/collection/free-to-play');
             await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
             
-            console.log("Scroll pour charger plus de jeux...");
+            logSSE("Scroll pour charger plus de jeux...");
             for(let i=0; i<15; i++) {
                 await page.mouse.wheel(0, 2000);
                 await page.waitForTimeout(500);
@@ -153,14 +170,14 @@ async function claimFreeGames(claimAll = false) {
                 const href = await game_loc.nth(i).getAttribute('href');
                 if (href) urls.push(`https://store.epicgames.com${href}`);
             }
-            console.log(`🔍 ${urls.length} jeux/extensions trouvés dans la section Free-To-Play.`);
+            logSSE(`🔍 ${urls.length} jeux/extensions trouvés dans la section Free-To-Play.`);
         } else {
-            console.log("🌐 Navigation silencieuse vers Epic Games (Jeux de la semaine)...");
+            logSSE("🌐 Navigation silencieuse vers Epic Games (Jeux de la semaine)...");
             await page.goto('https://store.epicgames.com/fr/free-games');
             await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
 
             const game_loc = page.locator('a:has(span:text-is("Free Now")), a:has(span:text-is("Gratuit maintenant"))');
-            await game_loc.last().waitFor({ timeout: 10000 }).catch(() => console.log('⚠ Aucun jeu gratuit trouvé sur la page.'));
+            await game_loc.last().waitFor({ timeout: 10000 }).catch(() => logSSE('⚠ Aucun jeu gratuit trouvé sur la page.'));
             
             const count = await game_loc.count();
             for (let i = 0; i < count; i++) {
@@ -170,7 +187,7 @@ async function claimFreeGames(claimAll = false) {
         }
 
         for (const url of urls) {
-            console.log(`▶ Traitement : ${url.split('/').pop()}`);
+            logSSE(`▶ Traitement : ${url.split('/').pop()}`);
             await page.goto(url);
             await page.waitForLoadState('domcontentloaded');
 
@@ -192,14 +209,14 @@ async function claimFreeGames(claimAll = false) {
             const btnText = (await purchaseBtn.innerText()).toLowerCase().catch(() => '');
             
             if (btnText.includes('in library') || btnText.includes('dans la bibliothèque')) {
-                console.log('✔ Déjà possédé.');
+                logSSE('✔ Déjà possédé.');
                 await saveToHistory({ title, url, coverUrl, date: new Date().toISOString(), status: 'Existant' });
                 continue;
             } else if (btnText.includes('requires base game') || btnText.includes('jeu de base requis')) {
-                console.log('⚠ DLC bloqué sans jeu de base.');
+                logSSE('⚠ DLC bloqué sans jeu de base.');
                 continue;
             } else if (!btnText) {
-                console.log('⚠ Bouton d\'obtention introuvable.');
+                logSSE('⚠ Bouton d\'obtention introuvable.');
                 continue;
             }
 
@@ -221,21 +238,21 @@ async function claimFreeGames(claimAll = false) {
                     page.locator('text=Thanks, text=Merci').waitFor({ state: 'attached', timeout: 30000 }),
                     page.waitForSelector('#webPurchaseContainer iframe', { state: 'hidden', timeout: 30000 })
                 ]);
-                console.log(`🎉 Jeu récupéré avec succès : ${title}`);
+                logSSE(`🎉 Jeu récupéré avec succès : ${title}`);
                 await saveToHistory({ title, url, coverUrl, date: new Date().toISOString(), status: 'Nouveau' });
             } catch (e) {
-                console.log(`❌ Échec de validation.`);
+                logSSE(`❌ Échec de validation.`);
             }
         }
-        console.log("✅ Fin de la routine.");
+        logSSE("✅ Fin de la routine.");
 
     } catch (error) {
         if (error.code === 'ENOENT') {
-            console.error("❌ ERREUR : Fichier session.enc introuvable.");
+            logSSE("❌ ERREUR : Fichier session.enc introuvable.");
         } else if (error.message === "SESSION_EXPIRED") {
-            console.error("❌ ERREUR : Session Epic Games expirée !");
+            logSSE("❌ ERREUR : Session Epic Games expirée !");
         } else {
-            console.error("❌ Erreur d'exécution :", error.message);
+            logSSE("❌ Erreur d'exécution :", error.message);
         }
     } finally {
         if (browser) await browser.close();
@@ -243,11 +260,17 @@ async function claimFreeGames(claimAll = false) {
 }
 
 // Planification CRON
-console.log("🛡️ [SERVICE 2] Démon de récupération actif.");
-cron.schedule('0 20 * * 4', claimFreeGames);
+logSSE("🛡️ [SERVICE 2] Démon de récupération actif.");
+cron.schedule('0 20 * * 4', () => claimFreeGames(false));
 
-// Auto-run at startup for testing/initialization
-const args = process.argv.slice(2);
-if (args.includes('--run-now')) {
-    claimFreeGames();
+// Lancement au démarrage
+async function initDaemon() {
+    try {
+        await fs.access(SESSION_FILE);
+        logSSE("🔄 Vérification initiale au démarrage...");
+        await claimFreeGames(false);
+    } catch (e) {
+        logSSE("ℹ️ Aucune session existante au démarrage. En attente du Service 1.");
+    }
 }
+initDaemon();

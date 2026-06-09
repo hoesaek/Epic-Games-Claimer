@@ -3,23 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Epic Games Claimer - Bibliothèque</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <title>Epic Games Claimer - Premium Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --primary: #3b82f6;
-            --accent: #8b5cf6;
+            --bg-color: #000000;
+            --card-bg: rgba(20, 20, 20, 0.8);
+            --primary: #f97316;
+            --accent: #ef4444;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.08);
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Outfit', sans-serif;
+            font-family: 'Inter', sans-serif;
         }
 
         body {
@@ -27,154 +28,267 @@
             color: var(--text-main);
             min-height: 100vh;
             background-image: 
-                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
+                radial-gradient(circle at 15% 0%, rgba(249, 115, 22, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 85% 100%, rgba(239, 68, 68, 0.15) 0%, transparent 40%);
             background-attachment: fixed;
+            overflow-x: hidden;
         }
+
+        /* Scrollbar custom */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
         header {
             text-align: center;
-            padding: 4rem 2rem;
+            padding: 4rem 2rem 2rem;
             position: relative;
-            overflow: hidden;
         }
 
         h1 {
-            font-size: 3.5rem;
+            font-size: 4rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #60a5fa, #c084fc);
+            background: linear-gradient(135deg, var(--primary), var(--accent));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: -1px;
             animation: fadeInDown 0.8s ease-out;
         }
 
-        p.subtitle {
-            color: var(--text-muted);
+        #user-display {
             font-size: 1.2rem;
-            max-width: 600px;
-            margin: 0 auto;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            background: rgba(255, 255, 255, 0.03);
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            border-radius: 9999px;
+            border: 1px solid var(--border-color);
             animation: fadeIn 1s ease-out 0.3s both;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
+        .actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+            animation: slideUp 0.8s ease-out 0.4s both;
         }
 
-        .stats-bar {
+        .btn-manual {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border: 1px solid var(--border-color);
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-manual:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border: none;
+            box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 15px 30px rgba(239, 68, 68, 0.4);
+            background: linear-gradient(135deg, #fb923c, #f87171);
+            border: none;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem 4rem;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
+        /* Sidebar / Terminal */
+        .sidebar {
             display: flex;
-            justify-content: space-around;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .stats-card {
             background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-color);
             border-radius: 20px;
             padding: 2rem;
-            margin-bottom: 3rem;
-            animation: slideUp 0.8s ease-out 0.5s both;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: space-around;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            animation: fadeIn 0.8s ease-out 0.5s both;
         }
 
-        .stat-item {
-            text-align: center;
-        }
-
+        .stat-item { text-align: center; }
         .stat-value {
-            font-size: 2.5rem;
+            font-size: 3rem;
             font-weight: 800;
-            color: var(--primary);
-            text-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+            background: linear-gradient(135deg, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-
         .stat-label {
             color: var(--text-muted);
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-top: 0.5rem;
         }
 
+        .terminal-container {
+            background: #0a0a0a;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 500px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            animation: fadeIn 0.8s ease-out 0.6s both;
+        }
+
+        .terminal-header {
+            background: #111;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .terminal-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot-r { background: #ef4444; }
+        .dot-y { background: #eab308; }
+        .dot-g { background: #22c55e; }
+
+        .terminal-body {
+            padding: 1rem;
+            flex-grow: 1;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: #a3a3a3;
+            line-height: 1.6;
+        }
+
+        .terminal-body p { margin-bottom: 0.25rem; }
+        .terminal-body .highlight { color: var(--primary); }
+
+        /* Main Content */
         .games-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 2rem;
+            align-items: start;
         }
 
         .game-card {
             background: var(--card-bg);
-            backdrop-filter: blur(10px);
             border-radius: 16px;
             overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             animation: fadeIn 0.5s ease-out both;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.8) 100%);
+            z-index: 1;
+            pointer-events: none;
         }
 
         .game-card:hover {
             transform: translateY(-10px) scale(1.02);
             border-color: rgba(255,255,255,0.2);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 20px rgba(59, 130, 246, 0.2);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 30px rgba(249, 115, 22, 0.1);
         }
 
         .game-cover {
             width: 100%;
             height: 380px;
             object-fit: cover;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            background: #1e293b; /* Placeholder if image fails */
+            background: #111;
         }
 
         .game-info {
             padding: 1.5rem;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 2;
         }
 
         .game-title {
-            font-size: 1.25rem;
-            font-weight: 600;
+            font-size: 1.2rem;
+            font-weight: 700;
             margin-bottom: 0.5rem;
             color: #fff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
 
         .game-meta {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: auto;
-            padding-top: 1rem;
-            border-top: 1px solid rgba(255,255,255,0.05);
         }
 
-        .game-date {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
+        .game-date { font-size: 0.8rem; color: #ccc; }
 
         .badge {
             padding: 0.25rem 0.75rem;
             border-radius: 9999px;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            backdrop-filter: blur(4px);
         }
 
         .badge.nouveau {
-            background: rgba(59, 130, 246, 0.2);
-            color: #60a5fa;
-            border: 1px solid rgba(59, 130, 246, 0.3);
+            background: rgba(249, 115, 22, 0.2);
+            color: var(--primary);
+            border: 1px solid rgba(249, 115, 22, 0.4);
         }
 
         .badge.existant {
-            background: rgba(148, 163, 184, 0.1);
-            color: #94a3b8;
-            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .empty-state {
@@ -187,170 +301,169 @@
         }
 
         .loader {
-            width: 50px;
-            height: 50px;
-            border: 3px solid rgba(59, 130, 246, 0.3);
+            width: 40px; height: 40px;
+            border: 3px solid rgba(249, 115, 22, 0.2);
             border-radius: 50%;
             border-top-color: var(--primary);
             animation: spin 1s ease-in-out infinite;
-            margin: 0 auto 2rem;
+            margin: 0 auto 1.5rem;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(40px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        a {
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .btn-manual {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 1.5rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
-        }
-
-        .btn-manual:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.6);
-        }
-
-        .btn-manual:active {
-            transform: translateY(0);
-        }
-
+        /* Notifications */
         .notification {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            bottom: 30px;
+            right: 30px;
             padding: 1rem 1.5rem;
-            border-radius: 8px;
+            border-radius: 12px;
             color: white;
             font-weight: 600;
-            transform: translateX(150%);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: translateY(150%);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             z-index: 1000;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background: rgba(20, 20, 20, 0.9);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
         }
         
-        .notification.show {
-            transform: translateX(0);
-        }
+        .notification.show { transform: translateY(0); }
 
-        .notification.success {
-            background: rgba(16, 185, 129, 0.9);
-            border: 1px solid #10b981;
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .notification.error {
-            background: rgba(239, 68, 68, 0.9);
-            border: 1px solid #ef4444;
-        }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>Ma Bibliothèque Epic</h1>
-        <p class="subtitle" id="user-display">Chargement de l'utilisateur...</p>
-        <div style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center;">
+        <h1>Epic Games Claimer</h1>
+        <div id="user-display"><div class="loader" style="width:15px; height:15px; display:inline-block; margin:0; vertical-align:middle; border-width:2px;"></div> Vérification du compte...</div>
+        
+        <div class="actions">
             <button class="btn-manual" onclick="triggerManualClaim(false)" id="btn-trigger">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                Jeux de la semaine
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                Vérifier Hebdomadaire
             </button>
-            <button class="btn-manual" onclick="triggerManualClaim(true)" id="btn-trigger-all" style="background: linear-gradient(135deg, #f59e0b, #ef4444);">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                TOUT Gratuit (Massif)
+            <button class="btn-manual btn-primary" onclick="triggerManualClaim(true)" id="btn-trigger-all">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Récupération Massive F2P
             </button>
         </div>
     </header>
 
-    <div id="notification" class="notification"></div>
-
     <div class="container">
-        <div class="stats-bar">
-            <div class="stat-item">
-                <div class="stat-value" id="stat-total">0</div>
-                <div class="stat-label">Jeux Traités</div>
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="stats-card">
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-total">0</div>
+                    <div class="stat-label">Analysés</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-claimed" style="background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text;">0</div>
+                    <div class="stat-label">Récupérés</div>
+                </div>
             </div>
-            <div class="stat-item">
-                <div class="stat-value" id="stat-claimed" style="color: #a78bfa; text-shadow: 0 0 20px rgba(139, 92, 246, 0.4);">0</div>
-                <div class="stat-label">Récupérés par le Bot</div>
+
+            <!-- Terminal d'activité en direct -->
+            <div class="terminal-container">
+                <div class="terminal-header">
+                    <div class="terminal-dot dot-r"></div>
+                    <div class="terminal-dot dot-y"></div>
+                    <div class="terminal-dot dot-g"></div>
+                    <span style="margin-left:10px;">Démon Activity Log</span>
+                </div>
+                <div class="terminal-body" id="terminal-body">
+                    <p style="color: #6b7280;">En attente d'événements serveur...</p>
+                </div>
             </div>
         </div>
 
-        <div id="loading" class="empty-state">
-            <div class="loader"></div>
-            <p>Chargement de l'historique depuis la base de données...</p>
-        </div>
-
-        <div class="games-grid" id="games-grid">
-            <!-- Games will be injected here via JS -->
+        <!-- Main Content (Jeux) -->
+        <div>
+            <div id="loading" class="empty-state">
+                <div class="loader"></div>
+                <p>Chargement de l'historique...</p>
+            </div>
+            <div class="games-grid" id="games-grid"></div>
         </div>
     </div>
 
+    <div id="notification" class="notification"></div>
+
     <script>
+        // --- LIVE TERMINAL (SSE) ---
+        const terminal = document.getElementById('terminal-body');
+        const evtSource = new EventSource('/api/logs/stream');
+        
+        evtSource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            const p = document.createElement('p');
+            
+            // Colorisation basique
+            let text = data.msg;
+            if(text.includes('✅') || text.includes('✔') || text.includes('🎉')) p.style.color = '#4ade80';
+            else if(text.includes('❌') || text.includes('ERREUR')) p.style.color = '#f87171';
+            else if(text.includes('⚠')) p.style.color = '#facc15';
+            
+            p.innerText = text;
+            
+            // Remove waiting message if exists
+            if (terminal.innerHTML.includes("En attente d'événements")) {
+                terminal.innerHTML = '';
+            }
+
+            terminal.appendChild(p);
+            terminal.scrollTop = terminal.scrollHeight; // Auto-scroll
+            
+            // Refresh history and user if certain keywords appear
+            if(text.includes('Fin de la routine') || text.includes('Session valide')) {
+                fetchUser();
+                fetchHistory();
+            }
+        };
+
+        // --- FETCH USER ---
         async function fetchUser() {
             try {
                 const response = await fetch('/api/user');
                 const data = await response.json();
-                document.getElementById('user-display').innerHTML = `Connecté en tant que : <strong style="color: #60a5fa;">${data.username}</strong>`;
+                if (data.username && data.username !== "En attente de connexion...") {
+                    document.getElementById('user-display').innerHTML = `Compte Actif : <strong style="color: #f97316;">${data.username}</strong>`;
+                } else {
+                    document.getElementById('user-display').innerHTML = `❌ Aucune session valide (Lancez le Service 1)`;
+                }
             } catch (e) {
-                document.getElementById('user-display').innerText = "Erreur de chargement de l'utilisateur.";
+                document.getElementById('user-display').innerText = "Serveur hors ligne.";
             }
         }
 
+        // --- FETCH HISTORY ---
         async function fetchHistory() {
             try {
                 const response = await fetch('/api/history');
                 const games = await response.json();
                 
                 document.getElementById('loading').style.display = 'none';
-                
                 const grid = document.getElementById('games-grid');
                 
                 if (games.length === 0) {
                     grid.innerHTML = `
                         <div class="empty-state">
-                            <h2 style="margin-bottom: 1rem; color: #fff;">Aucun jeu dans l'historique</h2>
-                            <p style="color: #94a3b8;">Le bot n'a pas encore récupéré de jeu. Attendez jeudi 20h00 !</p>
+                            <h2 style="margin-bottom: 1rem; color: #fff;">Bibliothèque Vide</h2>
+                            <p style="color: #94a3b8;">Aucun jeu n'a été récupéré pour le moment.</p>
                         </div>
                     `;
                     return;
                 }
 
-                // Update Stats
                 document.getElementById('stat-total').textContent = games.length;
                 document.getElementById('stat-claimed').textContent = games.filter(g => g.status === 'Nouveau').length;
 
-                // Render Cards
+                grid.innerHTML = ''; // Clear
                 games.forEach((game, index) => {
                     const card = document.createElement('a');
                     card.href = game.url;
@@ -365,7 +478,7 @@
                     const badgeClass = game.status === 'Nouveau' ? 'nouveau' : 'existant';
 
                     card.innerHTML = `
-                        <img class="game-cover" src="${game.coverUrl || 'https://via.placeholder.com/400x500/1e293b/94a3b8?text=Epic+Games'}" alt="${game.title}" loading="lazy" onerror="this.src='https://via.placeholder.com/400x500/1e293b/94a3b8?text=Image+Indisponible'">
+                        <img class="game-cover" src="${game.coverUrl || 'https://via.placeholder.com/400x500/111/333?text=Cover'}" alt="${game.title}" loading="lazy" onerror="this.src='https://via.placeholder.com/400x500/111/333?text=Cover'">
                         <div class="game-info">
                             <h3 class="game-title">${game.title}</h3>
                             <div class="game-meta">
@@ -379,17 +492,10 @@
 
             } catch (error) {
                 console.error('Error fetching history:', error);
-                document.getElementById('loading').innerHTML = `
-                    <h2 style="color: #ef4444; margin-bottom: 1rem;">Erreur de connexion</h2>
-                    <p style="color: #94a3b8;">Impossible de joindre le serveur. Le démon est-il en ligne ?</p>
-                `;
             }
         }
 
-        // Initialize
-        fetchUser();
-        fetchHistory();
-
+        // --- ACTIONS ---
         async function triggerManualClaim(claimAll) {
             const btn = claimAll ? document.getElementById('btn-trigger-all') : document.getElementById('btn-trigger');
             const originalContent = btn.innerHTML;
@@ -397,20 +503,19 @@
             try {
                 btn.disabled = true;
                 btn.style.opacity = '0.7';
-                btn.innerHTML = '<div class="loader" style="width: 20px; height: 20px; margin: 0; border-width: 2px;"></div> Lancement...';
+                btn.innerHTML = '<div class="loader" style="width: 15px; height: 15px; border-width: 2px;"></div> Lancement...';
 
                 const endpoint = claimAll ? '/api/claim-all' : '/api/claim';
                 const response = await fetch(endpoint, { method: 'POST' });
                 const result = await response.json();
 
                 if (result.success) {
-                    showNotification(claimAll ? 'Vérification massive lancée !' : 'Vérification lancée ! Regardez les logs Docker.', 'success');
+                    showNotification('Ordre envoyé ! Regardez le terminal.', 'success');
                 } else {
-                    showNotification('Erreur lors du lancement.', 'error');
+                    showNotification('Erreur côté serveur.', 'error');
                 }
             } catch (error) {
-                console.error('Error triggering claim:', error);
-                showNotification('Erreur de connexion au serveur.', 'error');
+                showNotification('Serveur injoignable.', 'error');
             } finally {
                 setTimeout(() => {
                     btn.disabled = false;
@@ -422,13 +527,14 @@
 
         function showNotification(message, type) {
             const notif = document.getElementById('notification');
-            notif.textContent = message;
+            notif.innerHTML = message;
             notif.className = `notification show ${type}`;
-            
-            setTimeout(() => {
-                notif.className = 'notification';
-            }, 4000);
+            setTimeout(() => { notif.className = 'notification'; }, 4000);
         }
+
+        // Init
+        fetchUser();
+        fetchHistory();
     </script>
 </body>
 </html>
