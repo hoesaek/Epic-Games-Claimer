@@ -7,7 +7,9 @@ services:
     image: ghcr.io/hoesaek/epic-games-claimer-service1:latest
     container_name: epic-login
     profiles: ["manual"]
-    env_file: .env
+    environment:
+      - SESSION_SECRET_KEY=EpicGamesSuperSecretKey12345678!
+      - TZ=Europe/Paris
     volumes:
       - session_data:/app/shared
     ports:
@@ -20,7 +22,9 @@ services:
     image: ghcr.io/hoesaek/epic-games-claimer-service2:latest
     container_name: epic-daemon
     restart: unless-stopped
-    env_file: .env
+    environment:
+      - SESSION_SECRET_KEY=EpicGamesSuperSecretKey12345678!
+      - TZ=Europe/Paris
     ports:
       - "8080:8080"
     volumes:
