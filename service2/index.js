@@ -84,6 +84,15 @@ function decryptData(encryptedData) {
     return JSON.parse(decrypted);
 }
 
+function encryptData(data) {
+    const text = JSON.stringify(data);
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(SECRET_KEY), iv);
+    let encrypted = cipher.update(text, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    return { iv: iv.toString('hex'), data: encrypted };
+}
+
 async function saveToHistory(game) {
     try {
         const raw = await fs.readFile(HISTORY_FILE, 'utf-8').catch(() => '[]');
@@ -135,9 +144,22 @@ async function claimFreeGames(claimAll = false) {
 
         // Vérifier si la session est valide
         await page.goto('https://store.epicgames.com/fr/free-games');
-        await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
-        const isLoggedIn = await page.locator('egs-navigation').getAttribute('isloggedin').catch(() => 'false');
-        if (isLoggedIn !== 'true') throw new Error("SESSION_EXPIRED");
+        
+        let isLoggedIn = false;
+        try {
+            await page.waitForSelector('egs-navigation', { state: 'attached', timeout: 15000 });
+            // Epic met un peu de temps à injecter l'état de connexion via JS
+            for(let i=0; i<10; i++) {
+                const val = await page.locator('egs-navigation').getAttribute('isloggedin').catch(()=>null);
+                if (val === 'true') { 
+                    isLoggedIn = true; 
+                    break; 
+                }
+                await page.waitForTimeout(2000);
+            }
+        } catch (e) {}
+
+        if (!isLoggedIn) throw new Error("SESSION_EXPIRED");
 
         // Extraction du nom d'utilisateur
         const username = await page.evaluate(() => {
@@ -176,13 +198,13 @@ async function claimFreeGames(claimAll = false) {
             await page.goto('https://store.epicgames.com/fr/free-games');
             await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
 
-            const game_loc = page.locator('a:has(span:text-is("Free Now")), a:has(span:text-is("Gratuit maintenant"))');
-            await game_loc.last().waitFor({ timeout: 10000 }).catch(() => logSSE('⚠ Aucun jeu gratuit trouvé sur la page.'));
+            const game_loc = page.locator('a[role="link"]:has(span:text-matches("(?i)gratuit|free|100", "i"))');
+            await game_loc.last().waitFor({ timeout: 10000 }).catch(() => logSSE('⚠ Aucun jeu gratuit trouvé sur la page via le texte.'));
             
             const count = await game_loc.count();
             for (let i = 0; i < count; i++) {
                 const href = await game_loc.nth(i).getAttribute('href');
-                if (href) urls.push(`https://store.epicgames.com${href}`);
+                if (href && href.includes('/p/')) urls.push(`https://store.epicgames.com${href}`);
             }
         }
 
@@ -215,6 +237,9 @@ async function claimFreeGames(claimAll = false) {
             } else if (btnText.includes('requires base game') || btnText.includes('jeu de base requis')) {
                 logSSE('⚠ DLC bloqué sans jeu de base.');
                 continue;
+            } else if (btnText.includes('bientôt') || btnText.includes('soon')) {
+                logSSE('⏳ Jeu bientôt disponible (Ignoré).');
+                continue;
             } else if (!btnText) {
                 logSSE('⚠ Bouton d\'obtention introuvable.');
                 continue;
@@ -244,6 +269,18 @@ async function claimFreeGames(claimAll = false) {
                 logSSE(`❌ Échec de validation.`);
             }
         }
+
+        // Rafraîchir et sauvegarder les cookies pour prolonger la session infiniment !
+        try {
+            const newCookies = await context.cookies();
+            const newLs = await page.evaluate(() => Object.assign({}, window.localStorage));
+            const encryptedSession = encryptData({ cookies: newCookies, localStorage: newLs });
+            await fs.writeFile(SESSION_FILE, JSON.stringify(encryptedSession));
+            logSSE("🔄 Session rafraîchie et prolongée avec succès.");
+        } catch (e) {
+            logSSE("⚠ Impossible de prolonger la session.");
+        }
+
         logSSE("✅ Fin de la routine.");
 
     } catch (error) {
