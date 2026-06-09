@@ -38,7 +38,9 @@ async function login() {
             '--disable-blink-features=AutomationControlled',
             '--remote-debugging-address=0.0.0.0', // Permet la connexion distante
             '--remote-debugging-port=9222',
-            '--remote-allow-origins=*'
+            '--remote-allow-origins=*',
+            '--proxy-server=direct://',
+            '--proxy-bypass-list=*'
         ]
     });
 

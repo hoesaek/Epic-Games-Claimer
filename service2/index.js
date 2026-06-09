@@ -72,7 +72,13 @@ async function claimFreeGames() {
         browser = await chromium.launch({
             executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
             headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-blink-features=AutomationControlled']
+            args: [
+                '--no-sandbox', 
+                '--disable-setuid-sandbox', 
+                '--disable-blink-features=AutomationControlled',
+                '--proxy-server=direct://',
+                '--proxy-bypass-list=*'
+            ]
         });
 
         const context = await browser.newContext({
