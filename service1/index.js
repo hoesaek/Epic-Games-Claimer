@@ -51,6 +51,8 @@ async function login() {
     const page = await context.newPage();
 
     try {
+        await page.goto('https://www.epicgames.com/id/login?redirectUrl=https%3A%2F%2Fstore.epicgames.com%2Ffr%2F', { waitUntil: 'domcontentloaded', timeout: 60000 });
+        
         console.log("\n=======================================================");
         console.log("🌐 URL Epic Games ouverte !");
         console.log("👉 ACTION REQUISE : Le conteneur Docker tourne.");
@@ -58,8 +60,6 @@ async function login() {
         console.log("   Ouvrez votre navigateur local et allez sur : http://[IP_DE_VOTRE_SERVEUR]:9222");
         console.log("   Vous pourrez interagir avec la page Epic Games depuis là !");
         console.log("=======================================================\n");
-
-        await page.goto('https://www.epicgames.com/id/login?redirectUrl=https%3A%2F%2Fstore.epicgames.com%2Ffr%2F');
 
         // On attend la réussite de la connexion (changement d'URL)
         await page.waitForURL('**store.epicgames.com/**', { timeout: 0 });

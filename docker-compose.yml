@@ -11,6 +11,9 @@ services:
       - TZ=Europe/Paris
     volumes:
       - session_data:/app/shared
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     ports:
       - "9222:9222"
 
@@ -26,6 +29,9 @@ services:
       - TZ=Europe/Paris
     ports:
       - "8080:8080"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     volumes:
       - session_data:/app/shared
 
