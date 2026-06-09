@@ -37,7 +37,8 @@ async function login() {
             '--disable-dev-shm-usage',
             '--disable-blink-features=AutomationControlled',
             '--remote-debugging-address=0.0.0.0', // Permet la connexion distante
-            '--remote-debugging-port=9222'
+            '--remote-debugging-port=9222',
+            '--remote-allow-origins=*'
         ]
     });
 
@@ -52,7 +53,7 @@ async function login() {
         console.log("🌐 URL Epic Games ouverte !");
         console.log("👉 ACTION REQUISE : Le conteneur Docker tourne.");
         console.log("👉 Si vous n'avez pas de redirection d'affichage X11 :");
-        console.log("   Ouvrez votre navigateur local et allez sur : http://localhost:9222");
+        console.log("   Ouvrez votre navigateur local et allez sur : http://[IP_DE_VOTRE_SERVEUR]:9222");
         console.log("   Vous pourrez interagir avec la page Epic Games depuis là !");
         console.log("=======================================================\n");
 

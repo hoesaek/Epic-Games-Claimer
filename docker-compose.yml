@@ -6,7 +6,6 @@ services:
   service1-login:
     image: ghcr.io/hoesaek/epic-games-claimer-service1:latest
     container_name: epic-login
-    profiles: ["manual"]
     environment:
       - SESSION_SECRET_KEY=EpicGamesSuperSecretKey12345678!
       - TZ=Europe/Paris
