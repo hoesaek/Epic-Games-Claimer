@@ -132,8 +132,8 @@ async function claimFreeGames(claimAll = false) {
 
         const context = await browser.newContext({
             userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            locale: 'fr-FR',
-            timezoneId: 'Europe/Paris'
+            locale: 'en-US', // Enforce english to match Vogler's locators
+            timezoneId: 'America/New_York'
         });
 
         if (sessionData.cookies) {
@@ -151,7 +151,7 @@ async function claimFreeGames(claimAll = false) {
 
         // Vérifier si la session est valide en visitant la page de compte
         logSSE("[DEBUG] Test d'accès sécurisé pour vérifier la session...");
-        await page.goto('https://www.epicgames.com/account/personal', { waitUntil: 'domcontentloaded' });
+        await page.goto('https://www.epicgames.com/account/personal?lang=en-US', { waitUntil: 'domcontentloaded' });
         
         // Si les cookies sont invalides, Epic redirige automatiquement vers /id/login
         await page.waitForTimeout(5000);
@@ -160,7 +160,7 @@ async function claimFreeGames(claimAll = false) {
         }
 
         logSSE("[DEBUG] Session confirmée. Retour à la boutique...");
-        await page.goto('https://store.epicgames.com/fr/');
+        await page.goto('https://store.epicgames.com/en-US/');
         await page.waitForLoadState('domcontentloaded');
         await page.waitForTimeout(3000);
 
@@ -180,7 +180,7 @@ async function claimFreeGames(claimAll = false) {
 
         if (claimAll) {
             logSSE("[INFO] Navigation silencieuse vers la collection Free-To-Play...");
-            await page.goto('https://store.epicgames.com/fr/collection/free-to-play');
+            await page.goto('https://store.epicgames.com/en-US/collection/free-to-play');
             await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
             
             logSSE("[DEBUG] Scroll pour charger plus de jeux...");
@@ -189,7 +189,6 @@ async function claimFreeGames(claimAll = false) {
                 await page.waitForTimeout(500);
             }
             
-            // Extraction globale sans sélecteurs CSS stricts qui cassent tout le temps
             const allLinks = await page.evaluate(() => {
                 return Array.from(document.querySelectorAll('a'))
                     .filter(a => a.href && a.href.includes('/p/'))
@@ -200,140 +199,103 @@ async function claimFreeGames(claimAll = false) {
             logSSE(`[INFO] ${urls.length} jeux/extensions trouvés dans la section Free-To-Play.`);
         } else {
             logSSE("[INFO] Navigation silencieuse vers Epic Games (Jeux de la semaine)...");
-            await page.goto('https://store.epicgames.com/fr/free-games');
+            await page.goto('https://store.epicgames.com/en-US/free-games');
             await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
 
-            logSSE("[DEBUG] Extraction des liens de la page principale...");
-            // Extraction robuste par Javascript
-            const allLinks = await page.evaluate(() => {
-                return Array.from(document.querySelectorAll('a'))
-                    .filter(a => a.href && a.href.includes('/p/'))
-                    .map(a => a.href);
-            });
-            const uniqueUrls = [...new Set(allLinks)];
-            urls.push(...uniqueUrls);
-            logSSE(`[DEBUG] ${uniqueUrls.length} liens uniques trouvés.`);
+            logSSE("[DEBUG] Recherche des jeux 'Free Now'...");
+            const game_loc = page.locator('a:has(span:text-is("Free Now"))');
+            await game_loc.last().waitFor().catch(() => logSSE("[WARNING] Aucun jeu gratuit disponible ou timeout."));
+            
+            try {
+                const handles = await game_loc.elementHandles();
+                const urlSlugs = await Promise.all(handles.map(a => a.getAttribute('href')));
+                const uniqueUrls = [...new Set(urlSlugs.map(s => 'https://store.epicgames.com' + s))];
+                urls.push(...uniqueUrls);
+                logSSE(`[DEBUG] ${uniqueUrls.length} jeux gratuits trouvés.`);
+            } catch(e) {}
         }
 
         for (const url of urls) {
             logSSE(`[DEBUG] Chargement de la page (URL: ${url})...`);
             await page.goto(url);
-            await page.waitForLoadState('domcontentloaded');
 
-            try {
-                const continueBtn = page.locator('button:has-text("Continue"), button:has-text("Continuer")').first();
-                if (await continueBtn.count() > 0) {
-                    await continueBtn.click();
-                    await page.waitForTimeout(2000);
+            const purchaseBtn = page.locator('button[data-testid="purchase-cta-button"] >> :has-text("e"), :has-text("i")').first();
+            await purchaseBtn.waitFor().catch(() => {});
+            let btnText = '';
+            try { btnText = (await purchaseBtn.innerText()).toLowerCase(); } catch (e) {}
+            logSSE(`[DEBUG] Texte du bouton d'achat : "${btnText}"`);
+
+            // Age Gate 18+ handling from Vogler
+            if (await page.locator('button:has-text("Continue")').count() > 0) {
+                logSSE(`[DEBUG] Avertissement d'âge (18+) détecté. Validation...`);
+                if (await page.locator('[data-testid="AgeSelect"]').count()) {
+                    await page.locator('#month_toggle').click();
+                    await page.locator('#month_menu li:has-text("01")').click();
+                    await page.locator('#day_toggle').click();
+                    await page.locator('#day_menu li:has-text("01")').click();
+                    await page.locator('#year_toggle').click();
+                    await page.locator('#year_menu li:has-text("1987")').click();
                 }
-            } catch (e) {}
+                await page.click('button:has-text("Continue")', { delay: 111 });
+                await page.waitForTimeout(2000);
+            }
 
-            // Extraction des infos pour le Dashboard Web
             const title = await page.locator('h1').first().innerText().catch(() => 'Jeu Inconnu');
             logSSE(`[INFO] --- Analyse du jeu : ${title} ---`);
             const coverUrl = await page.locator('meta[property="og:image"]').getAttribute('content').catch(() => null);
 
-            const purchaseBtn = page.locator('button[data-testid="purchase-cta-button"]').first();
-            await purchaseBtn.waitFor({ timeout: 10000 }).catch(() => {});
-            
-            let btnText = '';
-            try {
-                btnText = await purchaseBtn.innerText();
-                btnText = btnText ? btnText.toLowerCase() : '';
-            } catch (e) {
-                logSSE(`[DEBUG] Impossible de lire le texte du bouton : ${e.message}`);
-            }
-            logSSE(`[DEBUG] Texte du bouton d'achat : "${btnText}"`);
-            
-            if (btnText.includes('in library') || btnText.includes('dans la bibliothèque')) {
+            if (btnText === 'in library') {
                 logSSE('[INFO] Déjà possédé. (Passé)');
                 await saveToHistory({ title, url, coverUrl, date: new Date().toISOString(), status: 'Existant' });
-                continue;
-            } else if (btnText.includes('requires base game') || btnText.includes('jeu de base requis')) {
+            } else if (btnText === 'requires base game') {
                 logSSE('[WARNING] DLC bloqué sans jeu de base. (Passé)');
-                continue;
-            } else if (btnText.includes('bientôt') || btnText.includes('soon')) {
-                logSSE('[INFO] Jeu bientôt disponible. (Ignoré)');
-                continue;
             } else if (!btnText) {
                 logSSE('[WARNING] Bouton d\'obtention introuvable.');
-                continue;
-            } else if (!btnText.includes('obtenir') && !btnText.includes('get')) {
-                logSSE(`[INFO] Jeu payant ou invalide (Bouton: "${btnText}"). (Ignoré)`);
-                continue;
-            }
+            } else {
+                logSSE(`[DEBUG] Tentative de clic sur le bouton d'obtention...`);
+                await purchaseBtn.click({ delay: 11 });
 
-            logSSE(`[DEBUG] Tentative de clic sur le bouton d'obtention...`);
+                // Handle random modals
+                page.click('button:has-text("Continue")').catch(() => {});
+                page.click('button:has-text("Yes, buy now")').catch(() => {});
 
-            await purchaseBtn.click({ delay: 100 });
+                // Accept EULA if needed
+                page.locator(':has-text("end user license agreement")').waitFor().then(async () => {
+                    logSSE(`[DEBUG] Clic sur Accepter (EULA)...`);
+                    await page.locator('input#agree').check();
+                    await page.locator('button:has-text("Accept")').click();
+                }).catch(() => {});
 
-            // Gestion de l'Age Gate (18+) qui peut apparaître juste après avoir cliqué sur "Obtenir"
-            try {
-                const ageGateBtn = page.locator('button').filter({ hasText: /^(continue|continuer)$/i }).first();
-                await ageGateBtn.waitFor({ state: 'visible', timeout: 4000 });
-                logSSE(`[DEBUG] Avertissement d'âge (18+) détecté. Validation...`);
-                await ageGateBtn.click();
-            } catch (e) {}
+                logSSE(`[DEBUG] Attente de la modale de confirmation de commande (iframe)...`);
+                await page.waitForSelector('#webPurchaseContainer iframe');
+                const iframe = page.frameLocator('#webPurchaseContainer iframe');
 
-            try {
-                logSSE(`[DEBUG] Clic sur Accepter (EULA) si présent...`);
-                const agreeBox = page.locator('input#agree');
-                await agreeBox.waitFor({ timeout: 3000 });
-                await agreeBox.check();
-                await page.locator('button:has-text("Accept"), button:has-text("Accepter")').click();
-            } catch (e) {}
-
-            logSSE(`[DEBUG] Attente de la modale de confirmation de commande (iframe)...`);
-            await page.waitForSelector('#webPurchaseContainer iframe', { timeout: 20000 });
-            const iframe = page.frameLocator('#webPurchaseContainer iframe');
-            
-            await page.waitForTimeout(4000); // Laisse le temps à l'application React interne de s'afficher
-
-            // Gestion de la case à cocher (EU Refund Agreement) DANS l'iframe
-            try {
-                const euCheckbox = iframe.locator('.payment-checkbox, input[type="checkbox"]').first();
-                if (await euCheckbox.count() > 0) {
-                    logSSE(`[DEBUG] Checkbox EU détectée dans l'iframe, on la coche.`);
-                    await euCheckbox.click({ force: true });
-                    await page.waitForTimeout(500);
+                if (await iframe.locator(':has-text("unavailable in your region")').count() > 0) {
+                    logSSE('[ERROR] Produit indisponible dans votre région.');
+                    continue;
                 }
-            } catch(e) {}
-            
-            try {
-                const btnTexts = await iframe.locator('button').evaluateAll(btns => btns.map(b => b.innerText.trim()).filter(t => t).join(' | '));
-                logSSE(`[DEBUG] Boutons détectés dans l'iframe : [${btnTexts}]`);
-            } catch(e) {}
 
-            const confirmBtn = iframe.locator('button').filter({ hasText: /(place order|confirmer|passer|add to library|ajouter|confirm|get)/i }).locator(':not(:has(.payment-loading--loading))').first();
-            const fallbackBtn = iframe.locator('button.payment-btn:not(:has(.payment-loading--loading))').first();
+                try {
+                    await iframe.locator('button:has-text("Place Order"):not(:has(.payment-loading--loading))').click({ delay: 11 });
+                    logSSE(`[DEBUG] Place Order cliqué.`);
+                } catch(e) {
+                    logSSE(`[ERROR] Impossible de cliquer sur Place Order.`);
+                }
 
-            try {
-                await confirmBtn.waitFor({ state: 'visible', timeout: 15000 });
-                await confirmBtn.click({ delay: 150 });
-            } catch (e) {
-                logSSE(`[WARNING] Bouton par texte introuvable. Essai du bouton fallback (payment-btn)...`);
-                await fallbackBtn.waitFor({ state: 'visible', timeout: 15000 });
-                await fallbackBtn.click({ delay: 150 });
-            }
+                // EU Accept Button
+                const btnAgree = iframe.locator('button:has-text("I Accept")');
+                btnAgree.waitFor().then(() => {
+                    logSSE(`[DEBUG] Bouton I Accept (EU) détecté, clic...`);
+                    return btnAgree.click();
+                }).catch(() => {});
 
-            // Pour l'Europe, parfois un bouton "I Accept" (J'accepte) apparait APRÈS avoir cliqué sur Place Order
-            try {
-                const btnAgree = iframe.locator('button').filter({ hasText: /(i accept|i agree|j'accepte|accepter)/i }).first();
-                await btnAgree.waitFor({ state: 'visible', timeout: 4000 });
-                logSSE(`[DEBUG] Bouton I Accept (EU) détecté, clic...`);
-                await btnAgree.click();
-            } catch(e) {}
-
-            try {
-                logSSE(`[DEBUG] Attente du message de succès ou de la fermeture de la modale...`);
-                await Promise.race([
-                    page.locator('text=Thanks, text=Merci').waitFor({ state: 'attached', timeout: 30000 }),
-                    page.waitForSelector('#webPurchaseContainer iframe', { state: 'hidden', timeout: 30000 })
-                ]);
-                logSSE(`[SUCCESS] Jeu récupéré avec succès : ${title}`);
-                await saveToHistory({ title, url, coverUrl, date: new Date().toISOString(), status: 'Nouveau' });
-            } catch (e) {
-                logSSE(`[ERROR] Échec de validation du paiement gratuit.`);
+                try {
+                    await page.locator('text=Thanks for your order!').waitFor({ state: 'attached', timeout: 30000 });
+                    logSSE(`[SUCCESS] Jeu récupéré avec succès : ${title}`);
+                    await saveToHistory({ title, url, coverUrl, date: new Date().toISOString(), status: 'Nouveau' });
+                } catch (e) {
+                    logSSE(`[ERROR] Échec de validation du paiement gratuit.`);
+                }
             }
         }
 
