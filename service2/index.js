@@ -261,10 +261,18 @@ async function claimFreeGames(claimAll = false) {
 
             await purchaseBtn.click({ delay: 100 });
 
+            // Gestion de l'Age Gate (18+) qui peut apparaître juste après avoir cliqué sur "Obtenir"
+            try {
+                const ageGateBtn = page.locator('button').filter({ hasText: /^(continue|continuer)$/i }).first();
+                await ageGateBtn.waitFor({ state: 'visible', timeout: 4000 });
+                logSSE(`[DEBUG] Avertissement d'âge (18+) détecté. Validation...`);
+                await ageGateBtn.click();
+            } catch (e) {}
+
             try {
                 logSSE(`[DEBUG] Clic sur Accepter (EULA) si présent...`);
                 const agreeBox = page.locator('input#agree');
-                await agreeBox.waitFor({ timeout: 5000 });
+                await agreeBox.waitFor({ timeout: 3000 });
                 await agreeBox.check();
                 await page.locator('button:has-text("Accept"), button:has-text("Accepter")').click();
             } catch (e) {}
@@ -274,6 +282,16 @@ async function claimFreeGames(claimAll = false) {
             const iframe = page.frameLocator('#webPurchaseContainer iframe');
             
             await page.waitForTimeout(4000); // Laisse le temps à l'application React interne de s'afficher
+
+            // Gestion de la case à cocher (EU Refund Agreement) DANS l'iframe
+            try {
+                const euCheckbox = iframe.locator('.payment-checkbox, input[type="checkbox"]').first();
+                if (await euCheckbox.count() > 0) {
+                    logSSE(`[DEBUG] Checkbox EU détectée dans l'iframe, on la coche.`);
+                    await euCheckbox.click({ force: true });
+                    await page.waitForTimeout(500);
+                }
+            } catch(e) {}
             
             try {
                 const btnTexts = await iframe.locator('button').evaluateAll(btns => btns.map(b => b.innerText.trim()).filter(t => t).join(' | '));
