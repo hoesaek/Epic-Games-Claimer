@@ -284,7 +284,16 @@ async function claimFreeGames(claimAll = false) {
                 }).catch(() => {});
 
                 try {
-                    const checkoutBtn = iframe.locator('button').filter({ hasText: /(Place Order|Add to library)/i }).locator(':not(:has(.payment-loading--loading))').first();
+                    const euCheckbox = iframe.locator('.payment-checkbox, input[type="checkbox"]').first();
+                    if (await euCheckbox.count() > 0) {
+                        logSSE(`[DEBUG] Checkbox EU détectée dans l'iframe, on la coche.`);
+                        await euCheckbox.check({ force: true }).catch(() => {});
+                        await page.waitForTimeout(500);
+                    }
+                } catch(e) {}
+
+                try {
+                    const checkoutBtn = iframe.locator('button.payment-btn:not(:has(.payment-loading--loading)), button').filter({ hasText: /(Place Order|Add to library)/i }).locator(':not(:has(.payment-loading--loading))').first();
                     await checkoutBtn.waitFor({ state: 'visible', timeout: 15000 });
                     await checkoutBtn.click({ delay: 11 });
                     logSSE(`[DEBUG] Bouton de validation de commande cliqué.`);
