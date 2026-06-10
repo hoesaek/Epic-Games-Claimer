@@ -269,14 +269,23 @@ async function claimFreeGames(claimAll = false) {
                 logSSE(`[DEBUG] Attente de la modale de confirmation de commande (iframe)...`);
                 await page.waitForSelector('#webPurchaseContainer iframe');
                 const iframe = page.frameLocator('#webPurchaseContainer iframe');
+                
+                // Laisse le temps à l'application React interne de s'afficher
+                await page.waitForTimeout(4000);
 
                 if (await iframe.locator(':has-text("unavailable in your region")').count() > 0) {
                     logSSE('[ERROR] Produit indisponible dans votre région.');
                     continue;
                 }
+                
+                // Détection de Captcha Epic Games
+                iframe.locator('#h_captcha_challenge_checkout_free_prod iframe').waitFor({ timeout: 5000 }).then(() => {
+                    logSSE(`[ERROR] 🛑 CAPTCHA détecté ! Epic Games bloque car trop de tentatives. Changez d'IP ou réessayez demain.`);
+                }).catch(() => {});
 
                 try {
                     const checkoutBtn = iframe.locator('button').filter({ hasText: /(Place Order|Add to library)/i }).locator(':not(:has(.payment-loading--loading))').first();
+                    await checkoutBtn.waitFor({ state: 'visible', timeout: 15000 });
                     await checkoutBtn.click({ delay: 11 });
                     logSSE(`[DEBUG] Bouton de validation de commande cliqué.`);
                 } catch(e) {
