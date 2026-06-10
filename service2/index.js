@@ -317,12 +317,12 @@ async function claimFreeGames(claimAll = false) {
                 } catch(e) {}
 
                 try {
-                    const checkoutBtn = iframe.locator('button.payment-btn:not(:has(.payment-loading--loading)), button').filter({ hasText: /(Place Order|Add to library)/i }).locator(':not(:has(.payment-loading--loading))').first();
+                    const checkoutBtn = iframe.locator('button:has-text("Place Order"), button:has-text("Add to library"), button:has-text("Add to Library")').locator(':not(:has(.payment-loading--loading))').first();
                     await checkoutBtn.waitFor({ state: 'visible', timeout: 15000 });
                     await checkoutBtn.click({ delay: 11 });
-                    logSSE(`[DEBUG] Bouton de validation de commande cliqué.`);
+                    logSSE(`[DEBUG] Bouton de validation ("Add to library") cliqué.`);
                 } catch(e) {
-                    logSSE(`[ERROR] Impossible de cliquer sur le bouton de validation de commande.`);
+                    logSSE(`[ERROR] Impossible de cliquer sur le bouton "Add to library".`);
                 }
 
                 // EU Accept Button
