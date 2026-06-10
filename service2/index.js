@@ -303,9 +303,16 @@ async function claimFreeGames(claimAll = false) {
                 }
                 
                 // Détection de Captcha Epic Games
-                iframe.locator('#h_captcha_challenge_checkout_free_prod iframe').waitFor({ timeout: 5000 }).then(() => {
-                    logSSE(`[ERROR] 🛑 CAPTCHA détecté ! Epic Games bloque car trop de tentatives. Changez d'IP ou réessayez demain.`);
-                }).catch(() => {});
+                try {
+                    const captcha = iframe.locator('#h_captcha_challenge_checkout_free_prod iframe');
+                    await captcha.waitFor({ timeout: 5000 });
+                    logSSE(`[ERROR] 🛑 CAPTCHA détecté ! Résolvez-le vite sur le flux vidéo en direct (vous avez 60 secondes)...`);
+                    
+                    // Attente de 60 secondes pour laisser le temps à l'utilisateur de cliquer sur le live viewer si c'était interactif
+                    // Cependant, le viewer actuel est passif. On laisse juste un délai important.
+                    await page.waitForTimeout(60000);
+                    logSSE(`[DEBUG] Reprise après le délai du captcha.`);
+                } catch(e) {}
 
                 try {
                     const euCheckbox = iframe.locator('.payment-checkbox, input[type="checkbox"]').first();
