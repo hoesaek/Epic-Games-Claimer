@@ -214,7 +214,7 @@ async function claimFreeGames(claimAll = false) {
         }
 
         for (const url of urls) {
-            logSSE(`[INFO] Traitement : ${url.split('/').pop()}`);
+            logSSE(`[DEBUG] Chargement de la page (URL: ${url})...`);
             await page.goto(url);
             await page.waitForLoadState('domcontentloaded');
 
@@ -228,7 +228,7 @@ async function claimFreeGames(claimAll = false) {
 
             // Extraction des infos pour le Dashboard Web
             const title = await page.locator('h1').first().innerText().catch(() => 'Jeu Inconnu');
-            logSSE(`[DEBUG] Titre détecté : ${title}`);
+            logSSE(`[INFO] --- Analyse du jeu : ${title} ---`);
             const coverUrl = await page.locator('meta[property="og:image"]').getAttribute('content').catch(() => null);
 
             const purchaseBtn = page.locator('button[data-testid="purchase-cta-button"]').first();
