@@ -276,10 +276,11 @@ async function claimFreeGames(claimAll = false) {
                 }
 
                 try {
-                    await iframe.locator('button:has-text("Place Order"):not(:has(.payment-loading--loading))').click({ delay: 11 });
-                    logSSE(`[DEBUG] Place Order cliqué.`);
+                    const checkoutBtn = iframe.locator('button').filter({ hasText: /(Place Order|Add to library)/i }).locator(':not(:has(.payment-loading--loading))').first();
+                    await checkoutBtn.click({ delay: 11 });
+                    logSSE(`[DEBUG] Bouton de validation de commande cliqué.`);
                 } catch(e) {
-                    logSSE(`[ERROR] Impossible de cliquer sur Place Order.`);
+                    logSSE(`[ERROR] Impossible de cliquer sur le bouton de validation de commande.`);
                 }
 
                 // EU Accept Button
