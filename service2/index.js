@@ -186,26 +186,28 @@ async function claimFreeGames(claimAll = false) {
                 await page.waitForTimeout(500);
             }
             
-            const game_loc = page.locator('a[role="link"]:has(span:text-is("Gratuit")), a[role="link"]:has(span:text-is("Free"))');
-            const count = await game_loc.count();
-            for (let i = 0; i < count; i++) {
-                const href = await game_loc.nth(i).getAttribute('href');
-                if (href) urls.push(`https://store.epicgames.com${href}`);
-            }
+            // Extraction globale sans sélecteurs CSS stricts qui cassent tout le temps
+            const allLinks = await page.evaluate(() => {
+                return Array.from(document.querySelectorAll('a'))
+                    .filter(a => a.href && a.href.includes('/p/'))
+                    .map(a => a.href);
+            });
+            const uniqueUrls = [...new Set(allLinks)];
+            urls.push(...uniqueUrls);
             logSSE(`🔍 ${urls.length} jeux/extensions trouvés dans la section Free-To-Play.`);
         } else {
             logSSE("🌐 Navigation silencieuse vers Epic Games (Jeux de la semaine)...");
             await page.goto('https://store.epicgames.com/fr/free-games');
             await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
 
-            const game_loc = page.locator('a[role="link"]:has(span:text-matches("gratuit|free|100", "i"))');
-            await game_loc.last().waitFor({ timeout: 10000 }).catch(() => logSSE('⚠ Aucun jeu gratuit trouvé sur la page via le texte.'));
-            
-            const count = await game_loc.count();
-            for (let i = 0; i < count; i++) {
-                const href = await game_loc.nth(i).getAttribute('href');
-                if (href && href.includes('/p/')) urls.push(`https://store.epicgames.com${href}`);
-            }
+            // Extraction robuste par Javascript
+            const allLinks = await page.evaluate(() => {
+                return Array.from(document.querySelectorAll('a'))
+                    .filter(a => a.href && a.href.includes('/p/'))
+                    .map(a => a.href);
+            });
+            const uniqueUrls = [...new Set(allLinks)];
+            urls.push(...uniqueUrls);
         }
 
         for (const url of urls) {
@@ -242,6 +244,9 @@ async function claimFreeGames(claimAll = false) {
                 continue;
             } else if (!btnText) {
                 logSSE('⚠ Bouton d\'obtention introuvable.');
+                continue;
+            } else if (!btnText.includes('obtenir') && !btnText.includes('get')) {
+                logSSE(`⚠ Bouton invalide ou jeu payant (Ignoré) : ${btnText}`);
                 continue;
             }
 
