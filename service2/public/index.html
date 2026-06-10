@@ -403,11 +403,13 @@
             const data = JSON.parse(event.data);
             const p = document.createElement('p');
             
-            // Colorisation basique
+            // Colorisation basique selon le tag
             let text = data.msg;
-            if(text.includes('✅') || text.includes('✔') || text.includes('🎉')) p.style.color = '#4ade80';
-            else if(text.includes('❌') || text.includes('ERREUR')) p.style.color = '#f87171';
-            else if(text.includes('⚠')) p.style.color = '#facc15';
+            if(text.includes('[SUCCESS]')) p.style.color = '#4ade80';
+            else if(text.includes('[ERROR]')) p.style.color = '#f87171';
+            else if(text.includes('[WARNING]')) p.style.color = '#facc15';
+            else if(text.includes('[DEBUG]')) p.style.color = '#6b7280';
+            else p.style.color = '#a3a3a3'; // INFO or default
             
             p.innerText = text;
             
