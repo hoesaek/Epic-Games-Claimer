@@ -38,6 +38,7 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.REPO }}-service1:latest
           provenance: false
+          no-cache: true
 
       # --- SERVICE 2 : Daemon Server ---
       - name: Build and push Service 2
@@ -47,3 +48,4 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.REPO }}-service2:latest
           provenance: false
+          no-cache: true
