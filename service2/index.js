@@ -303,9 +303,10 @@ async function claimFreeGames(claimAll = false) {
 
                 // EU Accept Button
                 const btnAgree = iframe.locator('button:has-text("I Accept")');
-                btnAgree.waitFor().then(() => {
+                btnAgree.waitFor().then(async () => {
+                    await page.waitForTimeout(1000); // Petit délai pour laisser l'animation Epic se terminer
                     logSSE(`[DEBUG] Bouton I Accept (EU) détecté, clic...`);
-                    return btnAgree.click();
+                    return btnAgree.click({ delay: 50 });
                 }).catch(() => {});
 
                 try {
@@ -314,6 +315,17 @@ async function claimFreeGames(claimAll = false) {
                     await saveToHistory({ title, url, coverUrl, date: new Date().toISOString(), status: 'Nouveau' });
                 } catch (e) {
                     logSSE(`[ERROR] Échec de validation du paiement gratuit.`);
+                    
+                    // DEBUGGING: Capture d'écran et lecture des erreurs
+                    try {
+                        await page.screenshot({ path: '/app/shared/debug_error_payment.png', fullPage: true });
+                        logSSE(`[INFO] 📸 Capture d'écran de l'erreur sauvegardée dans session_data/debug_error_payment.png`);
+                    } catch(err) {}
+
+                    try {
+                        const errText = await iframe.locator('.payment-alert, .payment__errors').first().innerText({ timeout: 2000 });
+                        if (errText) logSSE(`[ERROR] Message d'erreur Epic Games : "${errText}"`);
+                    } catch(err) {}
                 }
             }
         }
