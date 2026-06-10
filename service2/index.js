@@ -143,24 +143,20 @@ async function claimFreeGames(claimAll = false) {
             for (const [k, v] of Object.entries(ls)) window.localStorage.setItem(k, v);
         }, sessionData.localStorage || {});
 
-        // Vérifier si la session est valide
-        await page.goto('https://store.epicgames.com/fr/free-games');
+        // Vérifier si la session est valide en visitant la page de compte
+        logSSE("[DEBUG] Test d'accès sécurisé pour vérifier la session...");
+        await page.goto('https://www.epicgames.com/account/personal', { waitUntil: 'domcontentloaded' });
         
-        let isLoggedIn = false;
-        try {
-            await page.waitForSelector('egs-navigation', { state: 'attached', timeout: 15000 });
-            // Epic met un peu de temps à injecter l'état de connexion via JS
-            for(let i=0; i<10; i++) {
-                const val = await page.locator('egs-navigation').getAttribute('isloggedin').catch(()=>null);
-                if (val === 'true') { 
-                    isLoggedIn = true; 
-                    break; 
-                }
-                await page.waitForTimeout(2000);
-            }
-        } catch (e) {}
+        // Si les cookies sont invalides, Epic redirige automatiquement vers /id/login
+        await page.waitForTimeout(5000);
+        if (page.url().includes('/id/login')) {
+            throw new Error("SESSION_EXPIRED");
+        }
 
-        if (!isLoggedIn) throw new Error("SESSION_EXPIRED");
+        logSSE("[DEBUG] Session confirmée. Retour à la boutique...");
+        await page.goto('https://store.epicgames.com/fr/');
+        await page.waitForLoadState('domcontentloaded');
+        await page.waitForTimeout(3000);
 
         // Extraction du nom d'utilisateur
         const username = await page.evaluate(() => {
