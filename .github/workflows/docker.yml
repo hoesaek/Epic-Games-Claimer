@@ -37,6 +37,7 @@ jobs:
           context: ./service1
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.REPO }}-service1:latest
+          provenance: false
 
       # --- SERVICE 2 : Daemon Server ---
       - name: Build and push Service 2
@@ -45,3 +46,4 @@ jobs:
           context: ./service2
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.REPO }}-service2:latest
+          provenance: false
