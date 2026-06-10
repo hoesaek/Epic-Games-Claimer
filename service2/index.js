@@ -277,9 +277,24 @@ async function claimFreeGames(claimAll = false) {
             await page.waitForSelector('#webPurchaseContainer iframe', { timeout: 20000 });
             const iframe = page.frameLocator('#webPurchaseContainer iframe');
             
-            const confirmBtn = iframe.locator('button:text-matches("place order|confirmer|passer|add to library|ajouter|confirm", "i")').first();
-            await confirmBtn.waitFor({ state: 'visible', timeout: 30000 });
-            await confirmBtn.click({ delay: 150 });
+            await page.waitForTimeout(4000); // Laisse le temps à l'application React interne de s'afficher
+            
+            try {
+                const btnTexts = await iframe.locator('button').evaluateAll(btns => btns.map(b => b.innerText.trim()).filter(t => t).join(' | '));
+                logSSE(`[DEBUG] Boutons détectés dans l'iframe : [${btnTexts}]`);
+            } catch(e) {}
+
+            const confirmBtn = iframe.locator('button').filter({ hasText: /(place order|confirmer|passer|add to library|ajouter|confirm|get)/i }).first();
+            const fallbackBtn = iframe.locator('button.payment-btn').first();
+
+            try {
+                await confirmBtn.waitFor({ state: 'visible', timeout: 15000 });
+                await confirmBtn.click({ delay: 150 });
+            } catch (e) {
+                logSSE(`[WARNING] Bouton par texte introuvable. Essai du bouton fallback (payment-btn)...`);
+                await fallbackBtn.waitFor({ state: 'visible', timeout: 15000 });
+                await fallbackBtn.click({ delay: 150 });
+            }
 
             try {
                 logSSE(`[DEBUG] Attente du message de succès ou de la fermeture de la modale...`);

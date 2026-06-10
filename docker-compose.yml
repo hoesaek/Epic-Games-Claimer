@@ -10,10 +10,7 @@ services:
       - SESSION_SECRET_KEY=EpicGamesSuperSecretKey12345678!
       - TZ=Europe/Paris
     volumes:
-      - session_data:/app/shared
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
+      - ./session_data:/app/shared
     ports:
       - "6080:6080"
 
@@ -29,11 +26,8 @@ services:
       - TZ=Europe/Paris
     ports:
       - "8080:8080"
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
     volumes:
-      - session_data:/app/shared
+      - ./session_data:/app/shared
 
 volumes:
   session_data:
