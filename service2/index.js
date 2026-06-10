@@ -136,7 +136,13 @@ async function claimFreeGames(claimAll = false) {
             timezoneId: 'Europe/Paris'
         });
 
-        if (sessionData.cookies) await context.addCookies(sessionData.cookies);
+        if (sessionData.cookies) {
+            let cookies = sessionData.cookies.filter(c => !['OptanonAlertBoxClosed', 'HasAcceptedAgeGates'].includes(c.name));
+            // Cookies magiques pour outrepasser les bannières et les vérifications d'âge (18+)
+            cookies.push({ name: 'OptanonAlertBoxClosed', value: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), domain: '.epicgames.com', path: '/' });
+            cookies.push({ name: 'HasAcceptedAgeGates', value: 'USK:9007199254740991,general:18,EPIC SUGGESTED RATING:18', domain: 'store.epicgames.com', path: '/' });
+            await context.addCookies(cookies);
+        }
 
         const page = await context.newPage();
         await page.addInitScript((ls) => {
@@ -298,8 +304,8 @@ async function claimFreeGames(claimAll = false) {
                 logSSE(`[DEBUG] Boutons détectés dans l'iframe : [${btnTexts}]`);
             } catch(e) {}
 
-            const confirmBtn = iframe.locator('button').filter({ hasText: /(place order|confirmer|passer|add to library|ajouter|confirm|get)/i }).first();
-            const fallbackBtn = iframe.locator('button.payment-btn').first();
+            const confirmBtn = iframe.locator('button').filter({ hasText: /(place order|confirmer|passer|add to library|ajouter|confirm|get)/i }).locator(':not(:has(.payment-loading--loading))').first();
+            const fallbackBtn = iframe.locator('button.payment-btn:not(:has(.payment-loading--loading))').first();
 
             try {
                 await confirmBtn.waitFor({ state: 'visible', timeout: 15000 });
@@ -309,6 +315,14 @@ async function claimFreeGames(claimAll = false) {
                 await fallbackBtn.waitFor({ state: 'visible', timeout: 15000 });
                 await fallbackBtn.click({ delay: 150 });
             }
+
+            // Pour l'Europe, parfois un bouton "I Accept" (J'accepte) apparait APRÈS avoir cliqué sur Place Order
+            try {
+                const btnAgree = iframe.locator('button').filter({ hasText: /(i accept|i agree|j'accepte|accepter)/i }).first();
+                await btnAgree.waitFor({ state: 'visible', timeout: 4000 });
+                logSSE(`[DEBUG] Bouton I Accept (EU) détecté, clic...`);
+                await btnAgree.click();
+            } catch(e) {}
 
             try {
                 logSSE(`[DEBUG] Attente du message de succès ou de la fermeture de la modale...`);
