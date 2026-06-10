@@ -276,7 +276,10 @@ async function claimFreeGames(claimAll = false) {
             logSSE(`[DEBUG] Attente de la modale de confirmation de commande (iframe)...`);
             await page.waitForSelector('#webPurchaseContainer iframe', { timeout: 20000 });
             const iframe = page.frameLocator('#webPurchaseContainer iframe');
-            await iframe.locator('button:has-text("Place Order"), button:has-text("Confirmer la commande")').click({ delay: 150 });
+            
+            const confirmBtn = iframe.locator('button:text-matches("place order|confirmer|passer|add to library|ajouter|confirm", "i")').first();
+            await confirmBtn.waitFor({ state: 'visible', timeout: 30000 });
+            await confirmBtn.click({ delay: 150 });
 
             try {
                 logSSE(`[DEBUG] Attente du message de succès ou de la fermeture de la modale...`);
