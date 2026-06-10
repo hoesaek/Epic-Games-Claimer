@@ -384,6 +384,17 @@
 
         <!-- Main Content (Jeux) -->
         <div>
+            <!-- Live Browser Viewer -->
+            <div id="viewer-wrapper" style="display: none; background: #0a0a0a; border: 1px solid var(--border-color); border-radius: 20px; overflow: hidden; margin-bottom: 2rem; box-shadow: 0 20px 40px rgba(0,0,0,0.5); animation: fadeInDown 0.5s ease-out;">
+                <div class="terminal-header">
+                    <div class="terminal-dot dot-r"></div>
+                    <div class="terminal-dot dot-y"></div>
+                    <div class="terminal-dot dot-g"></div>
+                    <span style="margin-left:10px;">Live Browser View (Real-time)</span>
+                </div>
+                <img id="live-view" style="width: 100%; max-height: 600px; object-fit: contain; display: block; background: #000;" src="" />
+            </div>
+
             <div id="loading" class="empty-state">
                 <div class="loader"></div>
                 <p>Chargement de l'historique...</p>
@@ -401,6 +412,20 @@
         
         evtSource.onmessage = function(event) {
             const data = JSON.parse(event.data);
+            
+            // Gestion du flux vidéo (Live View)
+            if (data.image !== undefined) {
+                const wrapper = document.getElementById('viewer-wrapper');
+                const img = document.getElementById('live-view');
+                if (data.image) {
+                    wrapper.style.display = 'block';
+                    img.src = 'data:image/jpeg;base64,' + data.image;
+                } else {
+                    wrapper.style.display = 'none';
+                }
+                return;
+            }
+
             const p = document.createElement('p');
             
             // Colorisation basique selon le tag

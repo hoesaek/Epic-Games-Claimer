@@ -63,6 +63,25 @@ function logSSE(msg) {
     logClients.forEach(c => c.write(`data: ${JSON.stringify({ msg: formatted })}\n\n`));
 }
 
+function imageSSE(base64Str) {
+    logClients.forEach(c => c.write(`data: ${JSON.stringify({ image: base64Str })}\n\n`));
+}
+
+let isProcessing = false;
+let browserPage = null;
+
+async function startLiveView(page) {
+    browserPage = page;
+    while (isProcessing && browserPage && !browserPage.isClosed()) {
+        try {
+            const buffer = await browserPage.screenshot({ type: 'jpeg', quality: 40 });
+            imageSSE(buffer.toString('base64'));
+        } catch(e) {}
+        await new Promise(r => setTimeout(r, 1000)); // 1 FPS
+    }
+    imageSSE(''); // Cache le viewer quand fini
+}
+
 app.get('/api/logs/stream', (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -145,6 +164,11 @@ async function claimFreeGames(claimAll = false) {
         }
 
         const page = await context.newPage();
+        
+        // Démarrer le stream vidéo Live View !
+        isProcessing = true;
+        startLiveView(page);
+
         await page.addInitScript((ls) => {
             for (const [k, v] of Object.entries(ls)) window.localStorage.setItem(k, v);
         }, sessionData.localStorage || {});
@@ -353,6 +377,8 @@ async function claimFreeGames(claimAll = false) {
             logSSE("[ERROR] Erreur d'exécution : " + error.message);
         }
     } finally {
+        isProcessing = false; // Arrête le stream Live View
+        browserPage = null;
         logSSE("[DEBUG] Fermeture du navigateur...");
         if (browser) await browser.close();
     }
